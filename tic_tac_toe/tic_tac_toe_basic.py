@@ -21,13 +21,13 @@ def select_next_move(curr_score_board, curr_board):
 
     # get the maximum possible score in all the empty board positions
     for position in empty_positions:
-        if (curr_score_board[position[0], position[1]] > max_score):
-            max_score = curr_score_board[position[0], position[1]]
+        if (curr_score_board[position[0]][position[1]] > max_score):
+            max_score = curr_score_board[position[0]][position[1]]
 
     # get a list of all the board positions which have the max score
     max_score_positions = []
     for position in empty_positions:
-        if (curr_score_board[position[0], position[1]] == max_score):
+        if (curr_score_board[position[0]][position[1]] == max_score):
             max_score_positions.append(position)
 
     # randomly choose a position from amongst the above
@@ -36,8 +36,9 @@ def select_next_move(curr_score_board, curr_board):
     # return the position
     return (pos_to_return)
 
-def update_score_board(curr_score_board, curr_board, winner = None):
-    if winner == None:
+def update_score_board(curr_score_board, curr_board, winner = 0):
+    # there is a tie
+    if winner == 0:
         return (curr_score_board)
     else:
         n = len(curr_board)
@@ -67,7 +68,7 @@ def check_if_win(curr_board):
             return (1)
     # check diagonal win
     diag_sum_1 = sum([curr_board[i][i] for i in range(n)])
-    diag_sum_2 = sum([curr_board[n - i][i] for i in range(n)])
+    diag_sum_2 = sum([curr_board[n - 1 - i][i] for i in range(n)])
     if (diag_sum_1 == -1 * n or diag_sum_2 == -1 * n):
         return (-1)
     if (diag_sum_1 == 1 * n or diag_sum_2 == 1 * n):
@@ -81,8 +82,14 @@ def check_if_win(curr_board):
     # must be a tie then
     return (0)
 
+def pretty_print_board(board):
+    n = len(board)
+    print ('########################')
+    for i in range(n):
+        print ([board[i][j] for j in range(n)])
+    print ('########################')
 
-num_simulations = 100
+num_simulations = 1
 num_matches = 10
 board_size = 3
 win_list = []
@@ -99,9 +106,13 @@ for _ in range(num_simulations):
             score_board.append([0] * board_size)
 
         # play the game, X (-1) pays first
-        player_1 = random.randint(0, 1) == 1 ? 1 : -1
+        player_1 = 1 if random.randint(0, 1) else -1
         player_2 = -1 * player_1
 
         curr_chance = -1
-        while (check_if_win(game_board) == n):
-
+        while (check_if_win(game_board) == board_size):
+            # pretty_print_board(game_board)
+            next_move = select_next_move(score_board, game_board)
+            game_board[next_move[0]][next_move[1]] = curr_chance
+            curr_chance *= -1
+        score_board = update_score_board(score_board, game_board, check_if_win(game_board))
