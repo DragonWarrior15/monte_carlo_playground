@@ -90,20 +90,21 @@ def pretty_print_board(board):
     print ('########################')
 
 num_simulations = 1
-num_matches = 10
+num_matches = 100
 board_size = 3
 win_list = []
 # the main simulation
 for _ in range(num_simulations):
+    # initialize the score tracker
+    score_board = []
+    for i in range(board_size):
+        score_board.append([0] * board_size)
+
     for _ in range(num_matches):
         # initialize the board
         game_board = []
         for i in range(board_size):
             game_board.append([0] * board_size)
-        # initialize the score tracker
-        score_board = []
-        for i in range(board_size):
-            score_board.append([0] * board_size)
 
         # play the game, X (-1) pays first
         player_1 = 1 if random.randint(0, 1) else -1
@@ -115,4 +116,13 @@ for _ in range(num_simulations):
             next_move = select_next_move(score_board, game_board)
             game_board[next_move[0]][next_move[1]] = curr_chance
             curr_chance *= -1
-        score_board = update_score_board(score_board, game_board, check_if_win(game_board))
+        winner = check_if_win(game_board)
+        win_list.append(winner)
+        score_board = update_score_board(score_board, game_board, winner)
+    # check how the score board looks
+    pretty_print_board(score_board)
+    # pretty_print_board(game_board)
+
+with open('winner_list.csv', 'w') as f:
+    # print (win_list)
+    f.write('n'.join([str(x) for x in win_list]))
