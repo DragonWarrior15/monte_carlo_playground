@@ -72,8 +72,10 @@ def check_if_win(curr_board):
         return (-1)
     if (diag_sum_1 == 1 * n or diag_sum_2 == 1 * n):
         return (1)
-    # no wins, return 0
-    return (0)
+    # check for tie
+    
+    # no wins or tie, game must go on, return board length
+    return (n)
 
 
 num_simulations = 100
