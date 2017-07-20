@@ -48,7 +48,33 @@ def update_score_board(curr_score_board, curr_board, winner = None):
 
 def check_game_status(curr_board):
     n = len(curr_board)
-    
+
+def check_if_win(curr_board):
+    n = len(curr_board)
+    # check win in row
+    for i in range(n):
+        row_sum = sum([curr_board[i][j] for j in range(n)])
+        if row_sum == -1 * n:
+            return (-1)
+        if row_sum == 1 * n:
+            return (1)
+    # check win in column
+    for i in range(n):
+        row_sum = sum([curr_board[j][i] for j in range(n)])
+        if row_sum == -1 * n:
+            return (-1)
+        if row_sum == 1 * n:
+            return (1)
+    # check diagonal win
+    diag_sum_1 = sum([curr_board[i][i] for i in range(n)])
+    diag_sum_2 = sum([curr_board[n - i][i] for i in range(n)])
+    if (diag_sum_1 == -1 * n or diag_sum_2 == -1 * n):
+        return (-1)
+    if (diag_sum_1 == 1 * n or diag_sum_2 == 1 * n):
+        return (1)
+    # no wins, return 0
+    return (0)
+
 
 num_simulations = 100
 num_matches = 10
