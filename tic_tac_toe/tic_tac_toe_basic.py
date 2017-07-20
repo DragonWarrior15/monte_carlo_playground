@@ -125,4 +125,4 @@ for _ in range(num_simulations):
 
 with open('winner_list.csv', 'w') as f:
     # print (win_list)
-    f.write('n'.join([str(x) for x in win_list]))
+    f.write('\n'.join([str(x) for x in win_list]))
