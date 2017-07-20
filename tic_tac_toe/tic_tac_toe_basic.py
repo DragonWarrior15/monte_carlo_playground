@@ -72,10 +72,14 @@ def check_if_win(curr_board):
         return (-1)
     if (diag_sum_1 == 1 * n or diag_sum_2 == 1 * n):
         return (1)
-    # check for tie
-    
-    # no wins or tie, game must go on, return board length
-    return (n)
+    # check if any position is still empty
+    for i in range(n):
+        for j in range(n):
+            if curr_board[i][j] == 0:
+                return (n)
+    # all positions seem to have been filled without any win
+    # must be a tie then
+    return (0)
 
 
 num_simulations = 100
@@ -97,4 +101,7 @@ for _ in range(num_simulations):
         # play the game, X (-1) pays first
         player_1 = random.randint(0, 1) == 1 ? 1 : -1
         player_2 = -1 * player_1
+
+        curr_chance = -1
+        while (check_if_win(game_board) == n):
 
