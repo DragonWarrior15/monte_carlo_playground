@@ -25,7 +25,13 @@ class reversi():
         self.possible_moves_dict[-1] = []
         self.possible_moves_dict[1] = []
 
+        self.modify_possible_moves_dict()
+
+    def modify_possible_moves_dict(self):
         self.possible_moves_dict[self.player] = self.calculate_possible_moves()
+        self.toggle_current_player()
+        self.possible_moves_dict[self.player] = self.calculate_possible_moves()
+        self.toggle_current_player()
 
     def get_row_col_from_index(self, index):
         return([index//self.board_size, index - self.board_size * (index//self.board_size)])
@@ -73,10 +79,7 @@ class reversi():
                     except IndexError:
                         pass
 
-        self.possible_moves_dict[self.player] = self.calculate_possible_moves()
-        self.toggle_current_player()
-        self.possible_moves_dict[self.player] = self.calculate_possible_moves()
-        self.toggle_current_player()
+        self.modify_possible_moves_dict()
 
     def traverse_lines_all_directions(self, row, col):
         # this function allows to traverse in all the 8 directions and find out if it's
