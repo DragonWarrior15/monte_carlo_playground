@@ -40,8 +40,10 @@ class reversi():
         return (row * self.board_size + col)
 
     def pretty_print(self):
+        print ()
         for i in range(self.board_size):
             print (self.board[self.board_size * i : self.board_size * (i + 1)])
+        print ()
 
     def pretty_print_highliting_possible_moves(self, possible_moves_list):
         newBoard = []
@@ -62,6 +64,20 @@ class reversi():
 
     def toggle_current_player(self):
         self.player *= -1
+
+    def get_empty_neighbors_indices(row, col):
+        # only the index is passed if col is None
+        indices_list = []
+        for horizontal_movement in [-1, 0, 1]:
+            for vertical_movement in [-1, 0, 1]:
+                if vertical_movement == 0 and horizontal_movement == 0:
+                    continue
+                index = self.get_index_from_row_col(row + horizontal_movement, col + vertical_movement)
+                if 0 <= index and index < self.board_size * self.board_size:
+                    if self.board[index] == 0:
+                        indices_list.append(index)
+
+        return (indices_list)
 
     def play_a_move(self, row, col):
         # function to play a move
@@ -90,47 +106,45 @@ class reversi():
             for vertical_movement in [-1, 0, 1]:
                 if vertical_movement == 0 and horizontal_movement == 0:
                     continue
-                try:
-                    if (self.board[self.get_index_from_row_col(row + horizontal_movement, col + vertical_movement)] == 0):
+                index = self.get_index_from_row_col(row + horizontal_movement, col + vertical_movement)
+                if 0 <= index and index < self.board_size * self.board_size:
+                    if (self.board[index] == 0):
                         # keep moving in the opposite direction to check if all the coins
                         # are of the same opposite color until the last coin in that direction
                         # which should be of the same colour
 
                         # the same function can be used to play a legitimate move using the modify_board argument
                         if(self.traverse_a_line(row + horizontal_movement, col + vertical_movement, -horizontal_movement, -vertical_movement)):
-                            moves_list.append(self.get_index_from_row_col(row + horizontal_movement, col + vertical_movement))
-                except IndexError:
-                    pass
+                            moves_list.append(index)
+
         return (moves_list)
 
     def traverse_a_line(self, row, col, horizontal_movement, vertical_movement, modify_board = False):
         num_pos_covered = 1
         move_possible = False
         positions_to_modify = []
-        if modify_board:
-            self.board[self.get_index_from_row_col(row, col)] = self.player
+        positions_to_modify.append(self.get_index_from_row_col(row, col))
+        # if modify_board:
+            # self.board[self.get_index_from_row_col(row, col)] = self.player
         while 1:
             # print (num_pos_covered, horizontal_movement, vertical_movement, pos, row, col)
             # print (self.board[self.get_index_from_row_col(row - num_pos_covered * horizontal_movement, col - num_pos_covered * vertical_movement)])
-            try:
-                if (self.board[self.get_index_from_row_col(row + num_pos_covered * horizontal_movement,
-                                                      col + num_pos_covered * vertical_movement)] == -1 * self.player):
-                    positions_to_modify.append(self.get_index_from_row_col(row + num_pos_covered * horizontal_movement, 
-                                                                           col + num_pos_covered * vertical_movement))
+            index = self.get_index_from_row_col(row + num_pos_covered * horizontal_movement, col + num_pos_covered * vertical_movement)
+            if 0 <= index and index < self.board_size * self.board_size:
+                if (self.board[index] == -1 * self.player):
+                    positions_to_modify.append(index)
                     num_pos_covered += 1
 
-                if (self.board[self.get_index_from_row_col(row + num_pos_covered * horizontal_movement,
-                                                      col + num_pos_covered * vertical_movement)] == self.player):
+                if (self.board[index] == self.player):
                     move_possible = True
                     if modify_board:
-                        print (positions_to_modify, self.get_row_col_from_index(positions_to_modify[0]))
+                        # print (positions_to_modify, self.get_row_col_from_index(positions_to_modify[0]))
                         for pos in positions_to_modify:
                             self.board[pos] = self.player
                     break
-                if (self.board[self.get_index_from_row_col(row + num_pos_covered * horizontal_movement,
-                                                      col + num_pos_covered * vertical_movement)] == 0):
+                if (self.board[index] == 0):
                     break
-            except IndexError:
+            else:
                 break
         return (move_possible)
 
@@ -156,7 +170,11 @@ class reversi():
         also, winner is decided based on which player has more no of coins
         return 0 for tie, 2 if the game can be played
         '''
-        if (len(self.possible_moves_dict[-1]) == 0 and len(self.possible_moves_dict[1] == 0)):
+        # print ('######')
+        # print (self.possible_moves_dict[-1], self.possible_moves_dict[1])
+        # print ('######')
+        
+        if (len(self.possible_moves_dict[-1]) == 0 and len(self.possible_moves_dict[1]) == 0):
             # the match has ended
             black_coins_on_board = len(np.where(self.board == -1)[0])
             white_coins_on_board = len(np.where(self.board == 1)[0])
@@ -167,12 +185,27 @@ class reversi():
             else:
                 # tie
                 return (0)
-        else:
+        elif (len(self.possible_moves_dict[self.player]) == 0):
+            self.toggle_current_player()
             # game can be played
             return (2)
+        else:
+            return (2)
+
+    def basic_game_simulator(self):
+        while (self.check_for_win() == 2):
+            self.pretty_print()
+            self.pretty_print_highliting_possible_moves(self.possible_moves_dict[self.player])
+            row, col = self.get_row_col_from_index(self.possible_moves_dict[self.player][np.random.randint(0, len(self.possible_moves_dict[self.player]))])
+            # print (self.possible_moves_dict[self.player])
+            # print (row, col)
+            self.play_a_move(row, col)
+            self.toggle_current_player()
+        self.pretty_print()
+        print ('\nThe Winner is ' + str(self.check_for_win()))
 
 
-def main():
+def main_check():
     myBoard = reversi(8)
     myBoard.pretty_print()
     print (myBoard.get_board_size())
@@ -187,6 +220,10 @@ def main():
     myBoard.pretty_print()
     print (myBoard.get_current_player())
     myBoard.pretty_print_highliting_possible_moves(myBoard.possible_moves_dict[myBoard.player])
+
+def main():
+    myBoard = reversi(8)
+    myBoard.basic_game_simulator()
 
 if __name__ == "__main__":
     main()
