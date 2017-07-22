@@ -21,17 +21,21 @@ class reversi():
 
         # set the current player to black or -1
         self.player = -1
-        self.possible_moves_dict = {}
-        self.possible_moves_dict[-1] = []
-        self.possible_moves_dict[1] = []
+        self.possible_moves_dict = {-1 : [], 1 : []}
 
         self.modify_possible_moves_dict()
+
+        # a dictionary to store the moves played by both the players
+        self.played_moves_dict = {-1 : [], 1 : []}
 
     def modify_possible_moves_dict(self):
         self.possible_moves_dict[self.player] = self.calculate_possible_moves()
         self.toggle_current_player()
         self.possible_moves_dict[self.player] = self.calculate_possible_moves()
         self.toggle_current_player()
+
+    def modify_played_moves_dict(self, move_index):
+        self.played_moves_dict[self.player].append(move_index)
 
     def get_row_col_from_index(self, index):
         return([index//self.board_size, index - self.board_size * (index//self.board_size)])
@@ -41,8 +45,17 @@ class reversi():
 
     def pretty_print(self):
         print ()
+        # for i in range(self.board_size):
+            # print (self.board[self.board_size * i : self.board_size * (i + 1)])
+        newBoard = []
         for i in range(self.board_size):
-            print (self.board[self.board_size * i : self.board_size * (i + 1)])
+            newBoard.append([0] * self.board_size)
+
+        for i in range(self.board_size):
+            for j in range(self.board_size):
+                newBoard[i][j] = int(self.board[self.get_index_from_row_col(i, j)])
+
+        print('\n'.join([''.join(['{:3}'.format(item) for item in row]) for row in newBoard]))
         print ()
 
     def pretty_print_highliting_possible_moves(self, possible_moves_list):
@@ -65,6 +78,21 @@ class reversi():
     def toggle_current_player(self):
         self.player *= -1
 
+    def check_row_col_valid(self, row, col):
+        '''
+        check of the index calculated based on row and col
+        falls in the range [0, self.board_size ^ 2), and also, the row and col
+        must be in range [0, self.board_sixe)
+        '''
+        index = self.get_index_from_row_col(row, col)
+        if 0 <= index and index < self.board_size * self.board_size and \
+           0 <= row and row < self.board_size and 0 <= col and col < self.board_size:
+           return (True)
+        return (False)
+
+    def modify_board_index(self, index):
+        self.board[index] = self.player
+
     def get_empty_neighbors_indices(row, col):
         # only the index is passed if col is None
         indices_list = []
@@ -73,7 +101,7 @@ class reversi():
                 if vertical_movement == 0 and horizontal_movement == 0:
                     continue
                 index = self.get_index_from_row_col(row + horizontal_movement, col + vertical_movement)
-                if 0 <= index and index < self.board_size * self.board_size:
+                if self.check_row_col_valid(row + horizontal_movement, col + vertical_movement):
                     if self.board[index] == 0:
                         indices_list.append(index)
 
@@ -84,17 +112,18 @@ class reversi():
         # check if the current move is legitimate
         # then modify this cell and all possible cells which can be modified
         if self.get_index_from_row_col(row, col) in self.possible_moves_dict[self.player]:
-            self.board[self.get_index_from_row_col(row, col)] = self.player
+            self.modify_board_index(self.get_index_from_row_col(row, col))
             for horizontal_movement in [-1, 0, 1]:
                 for vertical_movement in [-1, 0, 1]:
                     if vertical_movement == 0 and horizontal_movement == 0:
                         continue
-                    try:
+                    if self.check_row_col_valid(row + horizontal_movement, col + vertical_movement):
                         if (self.board[self.get_index_from_row_col(row + horizontal_movement, col + vertical_movement)] == -1 * self.player):
                             self.traverse_a_line(row + horizontal_movement, col + vertical_movement, horizontal_movement, vertical_movement, True)
-                    except IndexError:
+                    else:
                         pass
 
+        self.modify_played_moves_dict(self.get_index_from_row_col(row, col))
         self.modify_possible_moves_dict()
 
     def traverse_lines_all_directions(self, row, col):
@@ -107,7 +136,7 @@ class reversi():
                 if vertical_movement == 0 and horizontal_movement == 0:
                     continue
                 index = self.get_index_from_row_col(row + horizontal_movement, col + vertical_movement)
-                if 0 <= index and index < self.board_size * self.board_size:
+                if self.check_row_col_valid(row + horizontal_movement, col + vertical_movement):
                     if (self.board[index] == 0):
                         # keep moving in the opposite direction to check if all the coins
                         # are of the same opposite color until the last coin in that direction
@@ -130,7 +159,7 @@ class reversi():
             # print (num_pos_covered, horizontal_movement, vertical_movement, pos, row, col)
             # print (self.board[self.get_index_from_row_col(row - num_pos_covered * horizontal_movement, col - num_pos_covered * vertical_movement)])
             index = self.get_index_from_row_col(row + num_pos_covered * horizontal_movement, col + num_pos_covered * vertical_movement)
-            if 0 <= index and index < self.board_size * self.board_size:
+            if self.check_row_col_valid(row + num_pos_covered * horizontal_movement, col + num_pos_covered * vertical_movement):
                 if (self.board[index] == -1 * self.player):
                     positions_to_modify.append(index)
                     num_pos_covered += 1
@@ -140,7 +169,7 @@ class reversi():
                     if modify_board:
                         # print (positions_to_modify, self.get_row_col_from_index(positions_to_modify[0]))
                         for pos in positions_to_modify:
-                            self.board[pos] = self.player
+                            self.modify_board_index(pos)
                     break
                 if (self.board[index] == 0):
                     break
@@ -202,6 +231,8 @@ class reversi():
             self.play_a_move(row, col)
             self.toggle_current_player()
         self.pretty_print()
+        print (self.played_moves_dict[-1])
+        print (self.played_moves_dict[1])
         print ('\nThe Winner is ' + str(self.check_for_win()))
 
 
