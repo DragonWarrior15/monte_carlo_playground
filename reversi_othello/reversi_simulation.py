@@ -20,8 +20,8 @@ def main():
             win_list.append(reversi_board.check_for_win())
             reversi_board.reset_board()
 
-        print (win_list)
-        print (sim_no)
+        # print (win_list)
+        # print (sim_no)
         reversi_board.pretty_print_score_board()
 
         # plot the cumulative no of wins/tie
@@ -45,10 +45,10 @@ def main():
         plt.ylabel('Total Cumulative Count')
         plt.legend(loc = 2)
         plt.title(dir_name + " sim no " + str(sim_no))
-        plt.savefig(fig_name, dpi = 300)
+        plt.savefig(fig_name.replace(' ', '_'), dpi = 300)
 
-num_simulations = 5
-num_matches = 10
+num_simulations = 10
+num_matches = 1000
 board_size = 8
 if __name__ == "__main__":
     main()
