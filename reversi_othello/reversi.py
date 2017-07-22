@@ -31,6 +31,23 @@ class reversi():
         # initialize the array keeping track of the weights
         self.score_board = np.zeros(board_size * board_size)
 
+    def reset_board(self):
+        self.board = np.zeros(self.board_size * self.board_size)
+        # fill the centre four pieces
+        self.board[self.get_index_from_row_col(self.board_size//2 - 1, self.board_size//2 - 1)] = -1
+        self.board[self.get_index_from_row_col(self.board_size//2    , self.board_size//2    )] = -1
+        self.board[self.get_index_from_row_col(self.board_size//2    , self.board_size//2 - 1)] = 1
+        self.board[self.get_index_from_row_col(self.board_size//2 - 1, self.board_size//2    )] = 1
+
+        # set the current player to black or -1
+        self.player = -1
+        self.possible_moves_dict = {-1 : [], 1 : []}
+
+        self.modify_possible_moves_dict()
+
+        # a dictionary to store the moves played by both the players
+        self.played_moves_dict = {-1 : [], 1 : []}
+
     def modify_score_board(self):
         winner = self.check_for_win()
         if winner == -1 or winner == 1:
@@ -38,6 +55,11 @@ class reversi():
                 self.score_board[i] += 1
             for i in self.played_moves_dict[-1 * winner]:
                 self.score_board[i] -= 1
+
+    def select_a_move(self):
+        max_score = np.max([self.score_board[i] for i in self.possible_moves_dict[self.player]])
+        possible_moves_list = [i for i in self.possible_moves_dict[self.player] if self.score_board[i] == max_score]
+        return (possible_moves_list[np.random.randint(0, len(possible_moves_list))])
 
     def modify_possible_moves_dict(self):
         self.possible_moves_dict[self.player] = self.calculate_possible_moves()
@@ -53,6 +75,21 @@ class reversi():
 
     def get_index_from_row_col(self, row, col):
         return (row * self.board_size + col)
+
+    def pretty_print_score_board(self):
+        print ()
+        # for i in range(self.board_size):
+            # print (self.board[self.board_size * i : self.board_size * (i + 1)])
+        newBoard = []
+        for i in range(self.board_size):
+            newBoard.append([0] * self.board_size)
+
+        for i in range(self.board_size):
+            for j in range(self.board_size):
+                newBoard[i][j] = int(self.score_board[self.get_index_from_row_col(i, j)])
+
+        print('\n'.join([''.join(['{:3}'.format(item) for item in row]) for row in newBoard]))
+        print ()
 
     def pretty_print(self):
         print ()
