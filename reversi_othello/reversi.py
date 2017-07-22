@@ -28,6 +28,17 @@ class reversi():
         # a dictionary to store the moves played by both the players
         self.played_moves_dict = {-1 : [], 1 : []}
 
+        # initialize the array keeping track of the weights
+        self.score_board = np.zeros(board_size * board_size)
+
+    def modify_score_board(self):
+        winner = self.check_for_win()
+        if winner == -1 or winner == 1:
+            for i in self.played_moves_dict[winner]:
+                self.score_board[i] += 1
+            for i in self.played_moves_dict[-1 * winner]:
+                self.score_board[i] -= 1
+
     def modify_possible_moves_dict(self):
         self.possible_moves_dict[self.player] = self.calculate_possible_moves()
         self.toggle_current_player()
