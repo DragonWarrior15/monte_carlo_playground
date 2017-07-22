@@ -88,7 +88,7 @@ class reversi():
             for j in range(self.board_size):
                 newBoard[i][j] = int(self.score_board[self.get_index_from_row_col(i, j)])
 
-        print('\n'.join([''.join(['{:3}'.format(item) for item in row]) for row in newBoard]))
+        print('\n'.join([''.join(['{:6}'.format(item) for item in row]) for row in newBoard]))
         print ()
 
     def pretty_print(self):

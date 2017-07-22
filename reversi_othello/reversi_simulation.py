@@ -2,13 +2,15 @@ import numpy as np
 import reversi
 import os
 import matplotlib.pyplot as plt
+import datetime
 
 def main():
     for sim_no in range(num_simulations):
         reversi_board = reversi.reversi(board_size)
         win_list = []
         for game_no in range(num_matches):
-            print ('playing game ' + str(game_no) + ' in simulation no ' + str(sim_no))
+            if (game_no + 1) % 100 == 0:
+                print (str(datetime.datetime.now()) + ' playing game ' + str(game_no) + ' in simulation no ' + str(sim_no))
             while (reversi_board.check_for_win() == 2):
                 # reversi_board.pretty_print()
                 move = reversi_board.select_a_move()
@@ -32,7 +34,7 @@ def main():
 
         dir_name = "reversi with board size " + str(board_size) + " and " + str(num_matches) + " matches"
         try:
-            os.mkdir(dir_name)
+            os.mkdir(dir_name.replace(' ', '_'))
         except OSError:
             pass
         fig_name = os.path.join(dir_name, str(sim_no) + ".png")
@@ -48,7 +50,7 @@ def main():
         plt.savefig(fig_name.replace(' ', '_'), dpi = 300)
 
 num_simulations = 10
-num_matches = 1000
+num_matches = 3000
 board_size = 8
 if __name__ == "__main__":
     main()
