@@ -149,6 +149,28 @@ class reversi():
                         possible_moves_list.append(move)
         return (possible_moves_list)
 
+    def check_for_win(self):
+        '''
+        for a win or tie to happen, both the parties should have no possible moves left
+        check this using the dictionary of possible moves, bothe lengths must be zero
+        also, winner is decided based on which player has more no of coins
+        return 0 for tie, 2 if the game can be played
+        '''
+        if (len(self.possible_moves_dict[-1]) == 0 and len(self.possible_moves_dict[1] == 0)):
+            # the match has ended
+            black_coins_on_board = len(np.where(self.board == -1)[0])
+            white_coins_on_board = len(np.where(self.board == 1)[0])
+            if (black_coins_on_board > white_coins_on_board):
+                return (-1)
+            elif (white_coins_on_board > black_coins_on_board):
+                return (1)
+            else:
+                # tie
+                return (0)
+        else:
+            # game can be played
+            return (2)
+
 
 def main():
     myBoard = reversi(8)
