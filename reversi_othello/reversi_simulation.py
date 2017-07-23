@@ -73,6 +73,7 @@ def main_learned_vs_random(board_size = 8, num_matches = 10):
         if (game_no + 1)%100 == 0:
             print ('Playing game no ' + str(game_no))
         random_player = -1 if np.random.randint(0, 2) == 0 else 1
+        # random_player = 1
 
         # if random_player == -1:
             # move = reversi_board.select_a_move_randomly()
@@ -103,19 +104,20 @@ def main_learned_vs_random(board_size = 8, num_matches = 10):
         
         reversi_board.reset_board()
 
+    # fig_name = str(num_matches) + " matches between random and comp players comp always white"
     fig_name = str(num_matches) + " matches between random and comp players"
     fig, ax = plt.subplots(figsize=(15,10))
 
-    y_labels = ('random player \nwins as black', 
+    y_labels = ['random player \nwins as black', 
                 'random player \nwins as white',
                 'comp player \nwins as black',
                 'comp player \nwins as white',
-                'tie')
+                'tie']
     y_pos = np.arange(len(y_labels))
     win_counts = [win_list['random_player'][-1],
-                  win_list['comp_player'][1],
                   win_list['random_player'][1],
                   win_list['comp_player'][-1],
+                  win_list['comp_player'][1],
                   win_list['ties']]
 
     rects = ax.barh(y_pos, win_counts, align = 'center', color = 'blue')
@@ -139,6 +141,8 @@ def main_learned_vs_random(board_size = 8, num_matches = 10):
     ax.set_yticklabels(y_labels, size = 'x-large')
     ax.set_title(fig_name, size = 'xx-large')
     fig.savefig((fig_name + ".png").replace(' ', '_'), dpi = 300)
+    print (y_labels)
+    print (win_counts)
 
 def main():
     print ('Inside main()')
@@ -147,7 +151,7 @@ def main():
     board_size = 8
 
     # main_sim(board_size, num_simulations, num_matches)
-    main_learned_vs_random(board_size, 2000)
+    main_learned_vs_random(board_size, 500)
 
 if __name__ == "__main__":
     main()
