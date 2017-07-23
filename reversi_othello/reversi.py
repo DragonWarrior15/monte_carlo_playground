@@ -78,6 +78,26 @@ class reversi():
     def select_a_move_randomly(self):
         return (self.possible_moves_dict[self.player][np.random.randint(0, len(self.possible_moves_dict[self.player]))])
 
+    def select_a_move_from_tree(self):
+        '''
+        This function builds a few trees by playing all the positions
+        and checks which one has the maximum no of coins after playing
+        that move
+        '''
+        board_copy = np.array(self.board)
+        num_coins = []
+        current_possible_moves = list(self.possible_moves_dict[self.player])
+        for pos in current_possible_moves:
+            row, col = self.get_row_col_from_index(pos)
+            self.play_a_move(row, col)
+            num_coins.append(len(np.where(self.board == self.player)[0]))
+            self.board = np.array(board_copy)
+        self.board = np.array(board_copy)
+        self.modify_possible_moves_dict()
+        max_num_coins = max(num_coins)
+        max_coins_moves = [current_possible_moves[i] for i in range(len(current_possible_moves)) if num_coins[i] == max_num_coins]
+        return (max_coins_moves[np.random.randint(0, len(max_coins_moves))])
+
     def modify_possible_moves_dict(self):
         self.possible_moves_dict[self.player] = self.calculate_possible_moves()
         self.toggle_current_player()
