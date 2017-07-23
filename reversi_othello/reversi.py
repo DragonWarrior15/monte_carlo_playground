@@ -14,10 +14,10 @@ class reversi():
         self.board = np.zeros(board_size * board_size)
         self.board_size = board_size
         # fill the centre 4 pieces, can make this dynamic also
-        self.board[self.get_index_from_row_col(self.board_size//2 - 1, self.board_size//2 - 1)] = -1
-        self.board[self.get_index_from_row_col(self.board_size//2    , self.board_size//2    )] = -1
-        self.board[self.get_index_from_row_col(self.board_size//2    , self.board_size//2 - 1)] = 1
-        self.board[self.get_index_from_row_col(self.board_size//2 - 1, self.board_size//2    )] = 1
+        self.board[self.get_index_from_row_col(self.board_size//2 - 1, self.board_size//2 - 1)] = 1
+        self.board[self.get_index_from_row_col(self.board_size//2    , self.board_size//2    )] = 1
+        self.board[self.get_index_from_row_col(self.board_size//2    , self.board_size//2 - 1)] = -1
+        self.board[self.get_index_from_row_col(self.board_size//2 - 1, self.board_size//2    )] = -1
 
         # set the current player to black or -1
         self.player = -1
@@ -56,10 +56,27 @@ class reversi():
             for i in self.played_moves_dict[-1 * winner]:
                 self.score_board[i] -= 1
 
+    def initialize_custom_score_board(self, custom_score_board):
+        '''
+        pass a 1d numpy array here which has a custome set of weights
+        '''
+        # self.score_board = np.array([556,-107,79,37,103,43,59,323,\
+                                    # -111,-227,155,77,-29,29,-201,-31,\
+                                    # 125,-73,13,-42,-223,17,-215,33,\
+                                    # 27,-129,-33,0,0,-199,13,121,\
+                                    # 49,23,3,0,0,101,-85,-191,\
+                                    # 99,-99,-9,-44,-95,19,-67,69,\
+                                    # -26,-214,1,-43,51,-13,33,-139,\
+                                    # 506,33,25,67,-121,49,-74,225])
+        self.score_board = np.array(custom_score_board)
+
     def select_a_move(self):
         max_score = np.max([self.score_board[i] for i in self.possible_moves_dict[self.player]])
         possible_moves_list = [i for i in self.possible_moves_dict[self.player] if self.score_board[i] == max_score]
         return (possible_moves_list[np.random.randint(0, len(possible_moves_list))])
+
+    def select_a_move_randomly(self):
+        return (self.possible_moves_dict[self.player][np.random.randint(0, len(self.possible_moves_dict[self.player]))])
 
     def modify_possible_moves_dict(self):
         self.possible_moves_dict[self.player] = self.calculate_possible_moves()
