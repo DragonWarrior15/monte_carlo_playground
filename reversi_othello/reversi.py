@@ -78,34 +78,38 @@ class reversi():
     def select_a_move_randomly(self):
         return (self.possible_moves_dict[self.player][np.random.randint(0, len(self.possible_moves_dict[self.player]))])
 
-    def select_a_move_from_tree(self, tree_depth = 3):
+    def select_a_move_from_tree(self, player, current_player, tree_depth = 3, original_depth = 3):
         '''
         This function builds a few trees by playing all the positions
         and checks which one has the maximum no of coins after playing
         that move
         '''
+        current_possible_moves = list(self.possible_moves_dict[current_player])
+        num_coins = []
+        player_copy = player
+        current_player_copy = player
+        original_depth_copy = original_depth
         board_copy = np.array(self.board)
-        current_possible_moves = list(self.possible_moves_dict[self.player])
-        num_coins = [[] for i in range(len(current_possible_moves))]
-        
-        for index, pos in enumerate(current_possible_moves):
-            curr_depth = 1
+        for pos in current_possible_moves:
             row, col = self.get_row_col_from_index(pos)
             self.play_a_move(row, col)
-            self.toggle_current_player()
-            while curr_depth <= tree_depth:
-                curr_depth += 1
-                current_possible_moves_1 = list(self.possible_moves_dict[self.player])
-                for pos_1 in current_possible_moves_1:
-                    row, col = self.get_row_col_from_index(pos)
-                    self.play_a_move(row, col)
-                    num_coins.append(len(np.where(self.board == self.player)[0]))
-                    self.board = np.array(board_copy)
+            if tree_depth != 0:
+                num_coins.append(self.select_a_move_from_tree(player_copy, -1 * current_player_copy, tree_depth - 1, original_depth_copy))
+            else:
+                num_coins.append([1, len(np.where(self.board == player_copy)[0])])
+            self.board = np.array(board_copy)
         self.board = np.array(board_copy)
         self.modify_possible_moves_dict()
-        max_num_coins = max(num_coins)
-        max_coins_moves = [current_possible_moves[i] for i in range(len(current_possible_moves)) if num_coins[i] == max_num_coins]
-        return (max_coins_moves[np.random.randint(0, len(max_coins_moves))])
+        # print (player, current_player, tree_depth, original_depth)
+        # print (num_coins)
+        if tree_depth != original_depth_copy:
+            return ([sum([k[0] for k in num_coins]), sum([k[1] for k in num_coins])])
+        else:
+            # return the move with the max no of coins on average
+            num_coins = [k[1]/k[0] if k[0] != 0 else 0 for k in num_coins]
+            max_num_coins = max(num_coins)
+            max_coins_moves = [current_possible_moves[i] for i in range(len(current_possible_moves)) if num_coins[i] == max_num_coins]
+            return (max_coins_moves[np.random.randint(0, len(max_coins_moves))])
 
     def modify_possible_moves_dict(self):
         self.possible_moves_dict[self.player] = self.calculate_possible_moves()

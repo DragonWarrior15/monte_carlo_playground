@@ -144,10 +144,10 @@ def main_learned_vs_random(board_size = 8, num_matches = 10):
     print (y_labels)
     print (win_counts)
 
-def main_tree_vs_random(board_size = 8, num_matches = 10):
+def main_tree_vs_learned(board_size = 8, num_matches = 10):
     reversi_board = reversi.reversi(board_size)
-    win_list = {'random_player':{-1:0, 1:0},
-                'comp_player':{-1:0, 1:0},
+    win_list = {'tree_player':{-1:0, 1:0},
+                'monte_carlo_player':{-1:0, 1:0},
                 'ties':0}
     reversi_board.initialize_custom_score_board(
                    np.array([245,-24,56,78,0,10,30,186,\
@@ -162,53 +162,56 @@ def main_tree_vs_random(board_size = 8, num_matches = 10):
     for game_no in range(num_matches):
         if (game_no + 1)%100 == 0:
             print ('Playing game no ' + str(game_no))
-        random_player = -1 if np.random.randint(0, 2) == 0 else 1
-        # random_player = 1
+        tree_player = -1 if np.random.randint(0, 2) == 0 else 1
+        # tree_player = 1
 
-        # if random_player == -1:
+        # if tree_player == -1:
             # move = reversi_board.select_a_move_randomly()
             # row, col = reversi_board.get_row_col_from_index(move)
             # reversi_board.play_a_move(row, col)
             # reversi_board.toggle_current_player()
             
         while (reversi_board.check_for_win() == 2):
-            if reversi_board.player == random_player:
+            reversi_board.pretty_print()
+            if reversi_board.player == tree_player:
                 move = reversi_board.select_a_move_randomly()
             else:
                 # move = reversi_board.select_a_move()
-                move = reversi_board.select_a_move_from_tree()
+                move = reversi_board.select_a_move_from_tree(player = reversi_board.player, 
+                                                             current_player = reversi_board.player)
             row, col = reversi_board.get_row_col_from_index(move)
             reversi_board.play_a_move(row, col)
             reversi_board.toggle_current_player()
+        reversi_board.pretty_print()
 
         winner = reversi_board.check_for_win()
-        if (random_player == -1 and winner == -1):
-            win_list['random_player'][-1] += 1
-        elif (random_player == -1 and winner == 1):
-            win_list['comp_player'][1] += 1
-        elif (random_player == 1 and winner == 1):
-            win_list['random_player'][1] += 1
-        elif (random_player == 1 and winner == -1):
-            win_list['comp_player'][-1] += 1
+        if (tree_player == -1 and winner == -1):
+            win_list['tree_player'][-1] += 1
+        elif (tree_player == -1 and winner == 1):
+            win_list['monte_carlo_player'][1] += 1
+        elif (tree_player == 1 and winner == 1):
+            win_list['tree_player'][1] += 1
+        elif (tree_player == 1 and winner == -1):
+            win_list['monte_carlo_player'][-1] += 1
         else:
             win_list['ties'] += 1
         
         reversi_board.reset_board()
 
     # fig_name = str(num_matches) + " matches between random and comp players comp always white"
-    fig_name = str(num_matches) + " matches between random and tree comp players"
+    fig_name = str(num_matches) + " matches between depth 3 tree and monte carlo players"
     fig, ax = plt.subplots(figsize=(15,10))
 
-    y_labels = ['random player \nwins as black', 
-                'random player \nwins as white',
-                'comp player \nwins as black',
-                'comp player \nwins as white',
+    y_labels = ['tree player \nwins as black', 
+                'tree player \nwins as white',
+                'monte carlo \nplayer wins\n as black',
+                'monte carlo \nplayer wins\n as white',
                 'tie']
     y_pos = np.arange(len(y_labels))
-    win_counts = [win_list['random_player'][-1],
-                  win_list['random_player'][1],
-                  win_list['comp_player'][-1],
-                  win_list['comp_player'][1],
+    win_counts = [win_list['tree_player'][-1],
+                  win_list['tree_player'][1],
+                  win_list['monte_carlo_player'][-1],
+                  win_list['monte_carlo_player'][1],
                   win_list['ties']]
 
     rects = ax.barh(y_pos, win_counts, align = 'center', color = 'blue')
@@ -243,7 +246,7 @@ def main():
 
     # main_sim(board_size, num_simulations, num_matches)
     # main_learned_vs_random(board_size, 500)
-    main_tree_vs_random(board_size, 500)
+    main_tree_vs_learned(board_size, 100)
 
 if __name__ == "__main__":
     main()
