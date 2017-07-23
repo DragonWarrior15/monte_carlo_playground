@@ -74,11 +74,11 @@ def main_learned_vs_random(board_size = 8, num_matches = 10):
             print ('Playing game no ' + str(game_no))
         random_player = -1 if np.random.randint(0, 2) == 0 else 1
 
-        if random_player == -1:
-            move = reversi_board.select_a_move_randomly()
-            row, col = reversi_board.get_row_col_from_index(move)
-            reversi_board.play_a_move(row, col)
-            reversi_board.toggle_current_player()
+        # if random_player == -1:
+            # move = reversi_board.select_a_move_randomly()
+            # row, col = reversi_board.get_row_col_from_index(move)
+            # reversi_board.play_a_move(row, col)
+            # reversi_board.toggle_current_player()
             
         while (reversi_board.check_for_win() == 2):
             if reversi_board.player == random_player:
@@ -147,7 +147,7 @@ def main():
     board_size = 8
 
     # main_sim(board_size, num_simulations, num_matches)
-    main_learned_vs_random(board_size, 5000)
+    main_learned_vs_random(board_size, 2000)
 
 if __name__ == "__main__":
     main()
