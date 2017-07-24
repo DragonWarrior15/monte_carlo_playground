@@ -28,15 +28,17 @@ class multi_layer_perceptron():
                 elif i == len(hidden_layers):
                     self.weights.append(np.random.normal(self.gaussian_mean, self.gaussian_var, (self.hidden_layers[-1], output_layer_size)))
                 else:
-                    self.weights.append(np.random.normal(self.gaussian_mean, self.gaussian_var, (self.hidden_layers[i], sef.hidden_layers[i + 1])))
+                    self.weights.append(np.random.normal(self.gaussian_mean, self.gaussian_var, (self.hidden_layers[i - 1], self.hidden_layers[i])))
             self.bias = np.random.normal(self.gaussian_mean, self.gaussian_var, [len(self.hidden_layers) + 1, 1])
 
     def predict(self, input_vector):
+        f = lambda x: 1/(1 + np.exp(-x))
         input_vector = np.array(input_vector).reshape(-1, self.input_layer_size)
-        output = np.matmul(input_vector, self.weights[0]) + self.bias[0]
+        output = f(np.matmul(input_vector, self.weights[0]) + self.bias[0])
         for i in range(1, len(self.weights)):
-            output = (np.matmul(output, self.weights[i]) + self.bias[i])
+            output = f((np.matmul(output, self.weights[i]) + self.bias[i]))
 
+        output = np.exp(output)/np.sum(np.exp(output))
         return (output)
 
     def get_weights(self):
@@ -50,6 +52,16 @@ class multi_layer_perceptron():
 
     def set_bias(self, bias):
         self.bias = bias
+
+    def tweak_weights(self):
+        num_weights = len(self.weights)
+        for i in range(num_weights):
+            self.weights[i] += np.random.normal(self.gaussian_mean, self.gaussian_var, self.weights[i].shape)
+
+    def tweak_bias(self):
+        num_bias = len(self.bias)
+        for i in range(num_bias):
+            self.bias[i] += np.random.normal(self.gaussian_mean, self.gaussian_var, self.bias[i].shape)        
 
 
 def main():

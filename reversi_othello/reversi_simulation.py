@@ -1,12 +1,13 @@
 import numpy as np
 import reversi
-import multi_layer_perceptron
+import multi_layer_perceptron as mlp
 import os
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatch
 # import seaborn as sns
 import datetime
 import random
+import pickle
 
 def main_sim(board_size = 8, num_simulations = 1, num_matches = 20):
     for sim_no in range(num_simulations):
@@ -241,15 +242,20 @@ def main_tree_vs_learned(board_size = 8, num_matches = 10):
     print (win_counts)
 
 def main_nn_evolved_from_ga(board_size, num_matches = 4, num_nn = 40, num_generations = 100):
+    input_layer_size = board_size * board_size
+    output_layer_size = board_size * board_size
+    hidden_layers = [board_size * board_size, board_size * board_size, 2]
     # reversi_board = reversi.reversi(board_size)
     if num_nn%2 != 0:
         num_nn += 1
-    nn_list = [multi_layer_perceptron(board_size * board_size, [board_size * board_size], board_size)] * num_nn
-    nn_score_track = [0] * num_nn
-
+    nn_list = [mlp.multi_layer_perceptron(input_layer_size, output_layer_size, hidden_layers) for _ in range(num_nn)]
+    # print (nn_list)
     for gen_no in range(num_generations):
+        nn_score_track = [0] * num_nn
+        if gen_no%50 == 0:
+            print (str(datetime.datetime.now()) + ' Generation no ' + str(gen_no))
         random.shuffle(nn_list)
-        for i in range(0, num_nn//2, 2):
+        for i in range(0, num_nn, 2):
             # play i and i + 1 against each other, total of 4 matches
             # player 1 is i and player 2 is i + 1
             for j in range(2):
@@ -259,10 +265,15 @@ def main_nn_evolved_from_ga(board_size, num_matches = 4, num_nn = 40, num_genera
                     reversi_board = reversi.reversi(board_size)
 
                     while (reversi_board.check_for_win() == 2):
+                        # reversi_board.pretty_print()
                         if reversi_board.player == player_1:
-                            move = nn_list[i].predict(reversi_board.board)
+                            nn_pred = nn_list[i].predict(reversi_board.board)
                         else:
-                            move = nn_list[i + 1].predict(reversi_board.board)
+                            nn_pred = nn_list[i + 1].predict(reversi_board.board)
+                        # print (nn_pred)
+                        nn_pred = nn_pred.reshape(input_layer_size, -1)
+                        move = [[i, nn_pred[i]] for i in reversi_board.possible_moves_dict[reversi_board.player]]
+                        move = sorted(move, key = lambda x:x[1], reverse = True)[0][0]
                         row, col = reversi_board.get_row_col_from_index(move)
                         reversi_board.play_a_move(row, col)
                         reversi_board.toggle_current_player()
@@ -275,18 +286,26 @@ def main_nn_evolved_from_ga(board_size, num_matches = 4, num_nn = 40, num_genera
                         nn_score_track[i] += 1
                     elif (player_2 == winner):
                         nn_score_track[i + 1] += 1
+                    # print (player_1, player_2, winner, nn_list[i], nn_list[i + 1])
+                    # print (nn_score_track)
 
         # select the top half, make the duplicates and make the mutations
-        nn_sort_list = [i, nn_score_track[i] for i in range(num_nn)]
-        nn_sort_list = sorted(nn_sort_list, key = lambda x: x[1])
+        # print (nn_score_track)
+        nn_sort_list = [[i, nn_score_track[i]] for i in range(num_nn)]
+        nn_sort_list = sorted(nn_sort_list, key = lambda x: x[1], reverse = True)
         nn_list = [nn_list[x[0]] for x in nn_sort_list]
         # keep only half of the top performers
         nn_list = nn_list[: num_nn//2 + 1]
         for i in range(num_nn // 2):
-            nn_list.append(multi_layer_perceptron(board_size * board_size, [board_size * board_size], board_size))
+            nn_list.append(mlp.multi_layer_perceptron(input_layer_size, output_layer_size, hidden_layers))
             nn_list[-1].set_weights(nn_list[i].get_weights())
+            nn_list[-1].tweak_weights()
             nn_list[-1].set_bias(nn_list[i].get_bias())
-        
+            nn_list[-1].tweak_bias()
+
+    f = open('nn_list_40nn_1000gen', 'wb')
+    pickle.dump(nn_list, f)
+    f.close()
 
 def main():
     print ('Inside main()')
@@ -296,7 +315,8 @@ def main():
 
     # main_sim(board_size, num_simulations, num_matches)
     # main_learned_vs_random(board_size, 500)
-    main_tree_vs_learned(board_size, 20)
+    # main_tree_vs_learned(board_size, 20)
+    main_nn_evolved_from_ga(board_size, num_generations = 1000)
 
 if __name__ == "__main__":
     main()
