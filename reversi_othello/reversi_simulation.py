@@ -160,8 +160,8 @@ def main_tree_vs_learned(board_size = 8, num_matches = 10):
                             228,-81,128,-32,28,-6,0,176]))
 
     for game_no in range(num_matches):
-        if (game_no + 1)%100 == 0:
-            print ('Playing game no ' + str(game_no))
+        # if (game_no + 1)%5 == 0:
+        print (str(datetime.datetime.now()) + ' Playing game no ' + str(game_no))
         tree_player = -1 if np.random.randint(0, 2) == 0 else 1
         # tree_player = 1
 
@@ -172,7 +172,7 @@ def main_tree_vs_learned(board_size = 8, num_matches = 10):
             # reversi_board.toggle_current_player()
             
         while (reversi_board.check_for_win() == 2):
-            reversi_board.pretty_print()
+            # reversi_board.pretty_print()
             if reversi_board.player == tree_player:
                 move = reversi_board.select_a_move_randomly()
             else:
@@ -182,7 +182,7 @@ def main_tree_vs_learned(board_size = 8, num_matches = 10):
             row, col = reversi_board.get_row_col_from_index(move)
             reversi_board.play_a_move(row, col)
             reversi_board.toggle_current_player()
-        reversi_board.pretty_print()
+        # reversi_board.pretty_print()
 
         winner = reversi_board.check_for_win()
         if (tree_player == -1 and winner == -1):
@@ -246,7 +246,7 @@ def main():
 
     # main_sim(board_size, num_simulations, num_matches)
     # main_learned_vs_random(board_size, 500)
-    main_tree_vs_learned(board_size, 100)
+    main_tree_vs_learned(board_size, 20)
 
 if __name__ == "__main__":
     main()
