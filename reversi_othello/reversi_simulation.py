@@ -238,6 +238,48 @@ def main_tree_vs_learned(board_size = 8, num_matches = 10):
     print (y_labels)
     print (win_counts)
 
+def main_nn_evolved_from_ga(board_size, num_matches = 4, num_nn = 40, num_generations = 100):
+    reversi_board = reversi.reversi(board_size)
+
+    for game_no in range(num_matches):
+        if (game_no + 1)%100 == 0:
+            print ('Playing game no ' + str(game_no))
+        random_player = -1 if np.random.randint(0, 2) == 0 else 1
+        # random_player = 1
+
+        # if random_player == -1:
+            # move = reversi_board.select_a_move_randomly()
+            # row, col = reversi_board.get_row_col_from_index(move)
+            # reversi_board.play_a_move(row, col)
+            # reversi_board.toggle_current_player()
+            
+        while (reversi_board.check_for_win() == 2):
+            if reversi_board.player == random_player:
+                move = reversi_board.select_a_move_randomly()
+            else:
+                move = reversi_board.select_a_move()
+            row, col = reversi_board.get_row_col_from_index(move)
+            reversi_board.play_a_move(row, col)
+            reversi_board.toggle_current_player()
+
+        winner = reversi_board.check_for_win()
+        if (random_player == -1 and winner == -1):
+            win_list['random_player'][-1] += 1
+        elif (random_player == -1 and winner == 1):
+            win_list['comp_player'][1] += 1
+        elif (random_player == 1 and winner == 1):
+            win_list['random_player'][1] += 1
+        elif (random_player == 1 and winner == -1):
+            win_list['comp_player'][-1] += 1
+        else:
+            win_list['ties'] += 1
+        
+        reversi_board.reset_board()
+
+    # fig_name = str(num_matches) + " matches between random and comp players comp always white"
+    fig_name = str(num_matches) + " matches between random and comp players"
+    fig, ax = plt.subplots(figsize=(15,10))
+
 def main():
     print ('Inside main()')
     num_simulations = 10
