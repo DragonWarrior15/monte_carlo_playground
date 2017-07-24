@@ -45,6 +45,12 @@ class multi_layer_perceptron():
     def get_bias(self):
         return (self.bias)
 
+    def set_weights(self, weights):
+        self.weights = weights
+
+    def set_bias(self, bias):
+        self.bias = bias
+
 
 def main():
     # simple main function to check if the class is working fine

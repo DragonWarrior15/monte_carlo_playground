@@ -1,10 +1,12 @@
 import numpy as np
 import reversi
+import multi_layer_perceptron
 import os
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatch
 # import seaborn as sns
 import datetime
+import random
 
 def main_sim(board_size = 8, num_simulations = 1, num_matches = 20):
     for sim_no in range(num_simulations):
@@ -239,46 +241,52 @@ def main_tree_vs_learned(board_size = 8, num_matches = 10):
     print (win_counts)
 
 def main_nn_evolved_from_ga(board_size, num_matches = 4, num_nn = 40, num_generations = 100):
-    reversi_board = reversi.reversi(board_size)
+    # reversi_board = reversi.reversi(board_size)
+    if num_nn%2 != 0:
+        num_nn += 1
+    nn_list = [multi_layer_perceptron(board_size * board_size, [board_size * board_size], board_size)] * num_nn
+    nn_score_track = [0] * num_nn
 
-    for game_no in range(num_matches):
-        if (game_no + 1)%100 == 0:
-            print ('Playing game no ' + str(game_no))
-        random_player = -1 if np.random.randint(0, 2) == 0 else 1
-        # random_player = 1
+    for gen_no in range(num_generations):
+        random.shuffle(nn_list)
+        for i in range(0, num_nn//2, 2):
+            # play i and i + 1 against each other, total of 4 matches
+            # player 1 is i and player 2 is i + 1
+            for j in range(2):
+                for player_1 in [-1, 1]:
+                    player_2 = -1 * player_1
+                    
+                    reversi_board = reversi.reversi(board_size)
 
-        # if random_player == -1:
-            # move = reversi_board.select_a_move_randomly()
-            # row, col = reversi_board.get_row_col_from_index(move)
-            # reversi_board.play_a_move(row, col)
-            # reversi_board.toggle_current_player()
-            
-        while (reversi_board.check_for_win() == 2):
-            if reversi_board.player == random_player:
-                move = reversi_board.select_a_move_randomly()
-            else:
-                move = reversi_board.select_a_move()
-            row, col = reversi_board.get_row_col_from_index(move)
-            reversi_board.play_a_move(row, col)
-            reversi_board.toggle_current_player()
+                    while (reversi_board.check_for_win() == 2):
+                        if reversi_board.player == player_1:
+                            move = nn_list[i].predict(reversi_board.board)
+                        else:
+                            move = nn_list[i + 1].predict(reversi_board.board)
+                        row, col = reversi_board.get_row_col_from_index(move)
+                        reversi_board.play_a_move(row, col)
+                        reversi_board.toggle_current_player()
 
-        winner = reversi_board.check_for_win()
-        if (random_player == -1 and winner == -1):
-            win_list['random_player'][-1] += 1
-        elif (random_player == -1 and winner == 1):
-            win_list['comp_player'][1] += 1
-        elif (random_player == 1 and winner == 1):
-            win_list['random_player'][1] += 1
-        elif (random_player == 1 and winner == -1):
-            win_list['comp_player'][-1] += 1
-        else:
-            win_list['ties'] += 1
+                    # assign the points to winners and losers
+                    winner = reversi_board.check_for_win()
+                    if winner == 0:
+                        pass
+                    elif (player_1 == winner):
+                        nn_score_track[i] += 1
+                    elif (player_2 == winner):
+                        nn_score_track[i + 1] += 1
+
+        # select the top half, make the duplicates and make the mutations
+        nn_sort_list = [i, nn_score_track[i] for i in range(num_nn)]
+        nn_sort_list = sorted(nn_sort_list, key = lambda x: x[1])
+        nn_list = [nn_list[x[0]] for x in nn_sort_list]
+        # keep only half of the top performers
+        nn_list = nn_list[: num_nn//2 + 1]
+        for i in range(num_nn // 2):
+            nn_list.append(multi_layer_perceptron(board_size * board_size, [board_size * board_size], board_size))
+            nn_list[-1].set_weights(nn_list[i].get_weights())
+            nn_list[-1].set_bias(nn_list[i].get_bias())
         
-        reversi_board.reset_board()
-
-    # fig_name = str(num_matches) + " matches between random and comp players comp always white"
-    fig_name = str(num_matches) + " matches between random and comp players"
-    fig, ax = plt.subplots(figsize=(15,10))
 
 def main():
     print ('Inside main()')
