@@ -241,7 +241,7 @@ def main_tree_vs_learned(board_size = 8, num_matches = 10):
     print (y_labels)
     print (win_counts)
 
-def main_nn_evolved_from_ga(board_size, num_matches = 4, num_nn = 40, num_generations = 100):
+def get_nn_evolved_from_ga(board_size, num_matches = 4, num_nn = 40, num_generations = 100):
     input_layer_size = board_size * board_size
     output_layer_size = board_size * board_size
     hidden_layers = [board_size * board_size, board_size * board_size, 2]
@@ -316,7 +316,7 @@ def main():
     # main_sim(board_size, num_simulations, num_matches)
     # main_learned_vs_random(board_size, 500)
     # main_tree_vs_learned(board_size, 20)
-    main_nn_evolved_from_ga(board_size, num_generations = 1000)
+    get_nn_evolved_from_ga(board_size, num_generations = 1000)
 
 if __name__ == "__main__":
     main()
