@@ -55,7 +55,7 @@ def main_sim(board_size = 8, num_simulations = 1, num_matches = 20):
         plt.ylabel('Total Cumulative Count')
         plt.legend(loc = 2)
         plt.title(dir_name + " sim no " + str(sim_no))
-        plt.savefig(fig_name.replace(' ', '_'), dpi = 300)
+        plt.savefig(os.path.join('monte_carlo_simulation_graphs', fig_name.replace(' ', '_')), dpi = 300)
 
 def main_learned_vs_random(board_size = 8, num_matches = 10):
     reversi_board = reversi.reversi(board_size)
@@ -143,7 +143,7 @@ def main_learned_vs_random(board_size = 8, num_matches = 10):
     ax.set_yticks(y_pos)
     ax.set_yticklabels(y_labels, size = 'x-large')
     ax.set_title(fig_name, size = 'xx-large')
-    fig.savefig((fig_name + ".png").replace(' ', '_'), dpi = 300)
+    fig.savefig(os.path.join('match_stats_between_different_players', fig_name + ".png").replace(' ', '_'), dpi = 300)
     print (y_labels)
     print (win_counts)
 
@@ -237,14 +237,14 @@ def main_tree_vs_learned(board_size = 8, num_matches = 10):
     ax.set_yticks(y_pos)
     ax.set_yticklabels(y_labels, size = 'x-large')
     ax.set_title(fig_name, size = 'xx-large')
-    fig.savefig((fig_name + ".png").replace(' ', '_'), dpi = 300)
+    fig.savefig(os.path.join('match_stats_between_different_players', fig_name + ".png").replace(' ', '_'), dpi = 300)
     print (y_labels)
     print (win_counts)
 
 def get_nn_evolved_from_ga(board_size, num_matches = 4, num_nn = 40, num_generations = 100):
     input_layer_size = board_size * board_size
     output_layer_size = board_size * board_size
-    hidden_layers = [board_size * board_size, board_size * board_size, 2]
+    hidden_layers = [board_size * board_size, board_size * board_size]
     # reversi_board = reversi.reversi(board_size)
     if num_nn%2 != 0:
         num_nn += 1
@@ -258,7 +258,7 @@ def get_nn_evolved_from_ga(board_size, num_matches = 4, num_nn = 40, num_generat
         for i in range(0, num_nn, 2):
             # play i and i + 1 against each other, total of 4 matches
             # player 1 is i and player 2 is i + 1
-            for j in range(2):
+            for _ in range(2):
                 for player_1 in [-1, 1]:
                     player_2 = -1 * player_1
                     
@@ -272,7 +272,7 @@ def get_nn_evolved_from_ga(board_size, num_matches = 4, num_nn = 40, num_generat
                             nn_pred = nn_list[i + 1].predict(reversi_board.board)
                         # print (nn_pred)
                         nn_pred = nn_pred.reshape(input_layer_size, -1)
-                        move = [[i, nn_pred[i]] for i in reversi_board.possible_moves_dict[reversi_board.player]]
+                        move = [[j, nn_pred[j]] for j in reversi_board.possible_moves_dict[reversi_board.player]]
                         move = sorted(move, key = lambda x:x[1], reverse = True)[0][0]
                         row, col = reversi_board.get_row_col_from_index(move)
                         reversi_board.play_a_move(row, col)
@@ -303,9 +303,160 @@ def get_nn_evolved_from_ga(board_size, num_matches = 4, num_nn = 40, num_generat
             nn_list[-1].set_bias(nn_list[i].get_bias())
             nn_list[-1].tweak_bias()
 
-    f = open('nn_list_40nn_1000gen', 'wb')
-    pickle.dump(nn_list, f)
-    f.close()
+    with open(os.path.join('nn_pickles', 'nn_list_' + str(num_nn) + 'nn_' + str(num_generations) + 'gen'), 'wb') as f:
+        pickle.dump(nn_list, f)
+
+def select_best_nn_league_matches(board_size, num_nn = 40, num_generations = 1000):
+    input_layer_size = board_size * board_size
+    output_layer_size = board_size * board_size
+    hidden_layers = [board_size * board_size, board_size * board_size]
+
+    with open(os.path.join('nn_pickles', 'nn_list_' + str(num_nn) + 'nn_' + str(num_generations) + 'gen'), 'rb') as f:
+        nn_list = pickle.load(f)
+    
+    print ('Total number of neural nets is ' + str(len(nn_list)))
+    # print (len(nn_list))
+
+    nn_score_track = [0] * len(nn_list)
+
+    for i in range(len(nn_list) - 1):
+        for j in range(i + 1, len(nn_list)):
+            print ('Playing match between ' + str(i) + ' and ' + str(j))
+            for player_1 in [-1, 1]:
+                player_2 = -1 * player_1
+                reversi_board = reversi.reversi(board_size)
+
+                while (reversi_board.check_for_win() == 2):
+                    # reversi_board.pretty_print()
+                    if reversi_board.player == player_1:
+                        nn_pred = nn_list[i].predict(reversi_board.board)
+                    else:
+                        nn_pred = nn_list[i + 1].predict(reversi_board.board)
+                    # print (nn_pred)
+                    nn_pred = nn_pred.reshape(input_layer_size, -1)
+                    move = [[j, nn_pred[j]] for j in reversi_board.possible_moves_dict[reversi_board.player]]
+                    move = sorted(move, key = lambda x:x[1], reverse = True)[0][0]
+                    row, col = reversi_board.get_row_col_from_index(move)
+                    reversi_board.play_a_move(row, col)
+                    reversi_board.toggle_current_player()
+
+                # assign the points to winners and losers
+                winner = reversi_board.check_for_win()
+                if winner == 0:
+                    pass
+                elif (player_1 == winner):
+                    nn_score_track[i] += 1
+                elif (player_2 == winner):
+                    nn_score_track[i + 1] += 1
+                # print (player_1, player_2, winner, nn_list[i], nn_list[i + 1])
+                # print (nn_score_track)
+
+    # select the top half, make the duplicates and make the mutations
+    # print (nn_score_track)
+    nn_sort_list = [[i, nn_score_track[i]] for i in range(len(nn_list))]
+    nn_sort_list = sorted(nn_sort_list, key = lambda x: x[1], reverse = True)
+    nn_list = [nn_list[x[0]] for x in nn_sort_list]
+
+    print (nn_sort_list)
+    with open(os.path.join('nn_pickles', 'nn_list_' + str(num_nn) + 'nn_' + str(num_generations) + 'gen_best'), 'wb') as f:
+        pickle.dump(nn_list, f)
+        
+def main_nn_vs_learned(board_size = 8, num_matches = 500):
+    input_layer_size = board_size * board_size
+    output_layer_size = board_size * board_size
+    hidden_layers = [board_size * board_size, board_size * board_size]
+
+    reversi_board = reversi.reversi(board_size)
+    win_list = {'nn_player':{-1:0, 1:0},
+                'monte_carlo_player':{-1:0, 1:0},
+                'ties':0}
+    reversi_board.initialize_custom_score_board(
+                   np.array([245,-24,56,78,0,10,30,186,\
+                            -76,-129,-74,28,-68,-26,-20,-28,\
+                            34,60,46,-78,-112,44,-76,8,\
+                            34,-56,-2,0,0,-32,28,-22,\
+                            12,18,-120,0,0,46,-16,48,\
+                            6,-114,72,-72,-118,-14,-118,66,\
+                            48,-86,-130,176,-70,56,2,-27,\
+                            228,-81,128,-32,28,-6,0,176]))
+
+    with open(os.path.join('nn_pickles', 'nn_list_40nn_1000gen_best'), 'rb') as f:
+        nn_list = pickle.load(f)
+
+    for game_no in range(num_matches):
+        if (game_no + 1)%10 == 0:
+            print (str(datetime.datetime.now()) + ' Playing game no ' + str(game_no))
+        nn_player = -1 if np.random.randint(0, 2) == 0 else 1
+        # nn_player = 1
+            
+        while (reversi_board.check_for_win() == 2):
+            # reversi_board.pretty_print()
+            if reversi_board.player == nn_player:
+                nn_pred = nn_list[0].predict(reversi_board.board)
+                nn_pred = nn_pred.reshape(input_layer_size, -1)
+                move = [[j, nn_pred[j]] for j in reversi_board.possible_moves_dict[reversi_board.player]]
+                move = sorted(move, key = lambda x:x[1], reverse = True)[0][0]
+            else:
+                # move = reversi_board.select_a_move()
+                move = reversi_board.select_a_move()
+            row, col = reversi_board.get_row_col_from_index(move)
+            reversi_board.play_a_move(row, col)
+            reversi_board.toggle_current_player()
+        # reversi_board.pretty_print()
+
+        winner = reversi_board.check_for_win()
+        if (nn_player == -1 and winner == -1):
+            win_list['nn_player'][-1] += 1
+        elif (nn_player == -1 and winner == 1):
+            win_list['monte_carlo_player'][1] += 1
+        elif (nn_player == 1 and winner == 1):
+            win_list['nn_player'][1] += 1
+        elif (nn_player == 1 and winner == -1):
+            win_list['monte_carlo_player'][-1] += 1
+        else:
+            win_list['ties'] += 1
+        
+        reversi_board.reset_board()
+
+    # fig_name = str(num_matches) + " matches between random and comp players comp always white"
+    fig_name = str(num_matches) + " matches between neural net 1000 generations and monte carlo players"
+    fig, ax = plt.subplots(figsize=(15,10))
+
+    y_labels = ['nn player \nwins as black', 
+                'nn player \nwins as white',
+                'monte carlo \nplayer wins\n as black',
+                'monte carlo \nplayer wins\n as white',
+                'tie']
+    y_pos = np.arange(len(y_labels))
+    win_counts = [win_list['nn_player'][-1],
+                  win_list['nn_player'][1],
+                  win_list['monte_carlo_player'][-1],
+                  win_list['monte_carlo_player'][1],
+                  win_list['ties']]
+
+    rects = ax.barh(y_pos, win_counts, align = 'center', color = 'blue')
+
+    labels = [str(round((100.0 * i)/num_matches, 2)) + "%" for i in win_counts]
+
+    # for rect, label in zip(rects, labels):
+        # width = rect.get_width()
+        # if width == 0:
+            # ax.text(width + 0.5, rect.get_y() + rect.get_height()/2, label, 
+                    # ha='left', va='center', size = 'x-large', weight = 'bold')
+        # else:
+            # ax.text(width - 0.5, rect.get_y() + rect.get_height()/2, label, 
+                    # ha='left', va='center', color = 'white', size = 'x-large',
+                    # weight = 'bold')
+
+    # ax.set_xticks([i for i in range(1, num_matches)])
+    # ax.set_xticklabels(size = 'x-large')
+    ax.set_xlabel('Counts', size = 'x-large')
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels(y_labels, size = 'x-large')
+    ax.set_title(fig_name, size = 'xx-large')
+    fig.savefig(os.path.join('match_stats_between_different_players', fig_name + ".png").replace(' ', '_'), dpi = 300)
+    print (y_labels)
+    print (win_counts)
 
 def main():
     print ('Inside main()')
@@ -316,7 +467,9 @@ def main():
     # main_sim(board_size, num_simulations, num_matches)
     # main_learned_vs_random(board_size, 500)
     # main_tree_vs_learned(board_size, 20)
-    get_nn_evolved_from_ga(board_size, num_generations = 1000)
+    # get_nn_evolved_from_ga(board_size, num_generations = 200)
+    # select_best_nn_league_matches(board_size)
+    main_nn_vs_learned(board_size)
 
 if __name__ == "__main__":
     main()
