@@ -89,20 +89,23 @@ class Agent:
         self._epsilon = epsilon
 
     # get action value
-    def get_qvalues(self, move_type, board, model = None):
-        # board is assumed to be a list
+    def get_qvalues(self, board, model = None):
+        # board is assumed to be of shape 1, 1 * board_size**2
         if model is None:
             model = self._model_pred
-        model_input = np.concatenate([np.array([move_type]), board]).reshape(1, -1)
-        q_values = model.predict(model_input)
+        q_values = model.predict(board)
         return q_values
 
     # get the action using epsilon greedy policy
     def move(self, move_type, board):
-        q_values = self.get_qvalues(move_type, board, self._model_pred)
-        action = int(np.argmax(q_values))
         if(np.random.random() <= self._epsilon):
             action = int(np.random.choice(list(range(len(board))), 1)[0])
+        else:
+            model_input = np.zeros(board.shape[0]+1)
+            model_input[-1] = move_type
+            model_input[:board.shape[0]] = board
+            q_values = self.get_qvalues(model_input.reshape(1, -1), self._model_pred)
+            action = int(np.argmax(q_values))
         return action
 
     def agent_model(self):
@@ -156,24 +159,34 @@ class Agent:
         print(self._target_net.summary())
 
     # add current game step to the replay buffer
+    # no processing happens here, discounted rewards should be calculated
+    # when training as target network latest at that point needs to be used
     def add_to_buffer(self, move_type, board, next_board, reward, action, done):
-        if(done):
-            discounted_reward = reward
-        else:
-            current_model = self._target_net if self._use_target_net else self._model_pred
-            discounted_reward = reward + self._gamma * \
-                     np.max(self.get_qvalues(move_type, next_board, current_model))
-
         # one hot encoding to convert the discounted rewards
         one_hot_action = np.zeros((1, self._board_size ** 2))
         one_hot_action[0, action] = 1
-
+        '''
+        # use if oversampling required
         add_times = 1
         if(done and reward > 0):
             add_times = 10
         for _ in range(add_times):
             self._buffer.add_data([board, move_type,
                             one_hot_action, discounted_reward])
+        '''
+        # append move type to board
+        board_mod = np.zeros(len(board)+1)
+        board_mod[-1] = move_type
+        board_mod[:len(board)] = board
+        board_mod = board_mod.reshape(1, -1)
+        # append move type to next board
+        next_board_mod = np.zeros(len(next_board)+1)
+        next_board_mod[-1] = move_type
+        next_board_mod[:len(next_board)] = next_board
+        next_board_mod = next_board_mod.reshape(1, -1)
+
+        self._buffer.add_data([board_mod, one_hot_action,
+                            reward, next_board_mod, done])
 
     def reset_buffer(self, buffer_size = None):
         if(buffer_size is not None):
@@ -181,9 +194,14 @@ class Agent:
         self._buffer = ReplayBuffer(self._buffer_size)
 
     def train_agent(self, sample_size = 10000, epochs = 10, verbose = 0):
-        X1, X2, y = self._buffer.sample(sample_size)
-        self._model_train.fit([X1, X2], y, epochs = epochs, verbose = verbose)
-        return self._model_train.evaluate([X1, X2], y)
+        # calculate the discounted rewards on the fly
+        s, a, r, next_s, done = self._buffer.sample(sample_size)
+        not_done = 1 - done
+        current_model = self._target_net if self._use_target_net else self._model_pred
+        discounted_reward = r + (self._gamma * np.max(self.get_qvalues(next_s, current_model), axis = 1).reshape(-1, 1)) * not_done
+        # train the model
+        self._model_train.fit([s, a], discounted_reward, epochs = epochs, verbose = verbose)
+        return self._model_train.evaluate([s, a], discounted_reward)
 
     # target network outputs is what we try to predict
     # this network is static for a while and serves as "ground truth"

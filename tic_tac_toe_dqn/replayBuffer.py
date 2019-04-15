@@ -11,17 +11,26 @@ class ReplayBuffer():
         self._buffer.append(data)
 
     def sample(self, size = None):
-        if size is None or not (0 < size and size <= len(self._buffer)):
-            size = int(0.1 * len(self._buffer))
+        buffer_size = len(self._buffer)
+        size = min(size, buffer_size)
+        p = (1.0*size)/buffer_size
+        # sample size will be smaller than buffer size, hence traverse queue once
+        sample_data = []
+        for x in self._buffer:
+            if(np.random.random() < p):
+                sample_data.append(x)
+        np.random.shuffle(sample_data)
+        s, a, r, next_s, done = [], [], [], [], []
+        for x in sample_data:
+            s.append(x[0])
+            a.append(x[1])
+            r.append(x[2])
+            next_s.append(x[3])
+            done.append(x[4])
+        s = np.concatenate(s)
+        a = np.concatenate(a, axis=0)
+        r = np.array(r).reshape(-1, 1)
+        next_s = np.concatenate(next_s)
+        done = np.array(done).reshape(-1, 1)
 
-        idx = np.random.choice(list(range(len(self._buffer))), size)
-        states, nums, actions, discounted_rewards = [], [], [], []
-        for i in idx:
-            states.append(self._buffer[i][0])
-            nums.append(self._buffer[i][1])
-            actions.append(self._buffer[i][2])
-            discounted_rewards.append(self._buffer[i][3])
-
-        return np.concatenate([np.array(nums).reshape(-1, 1), np.array(states)], axis = 1), \
-               np.concatenate(actions, axis = 0), \
-               np.array(discounted_rewards)
+        return s, a, r, next_s, done
